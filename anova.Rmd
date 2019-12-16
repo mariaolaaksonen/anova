@@ -1,0 +1,91 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+
+# For more info:
+https://www.guru99.com/r-anova-tutorial.html
+
+# Preparations
+go to command line and install needed packages:
+>> R
+>> install.packages("dplyr", "ggplot2", "reshape")
+
+# Load libraries
+```{r}
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+```
+
+# Load data
+```{r}
+#Change test.csv to the correct filepath and sep to the delimiter used in your data (\t=tab)
+brain_df <- read.csv("test.csv", sep = "\t")
+melt_brain <- melt(brain_df, id.vars = "patientID") # Change patientID to the name of the ID column in your data
+# Check that variable column has the groupings and value the summarized values
+glimpse(melt_brain)
+```
+
+# Change column names if necessary
+```{r}
+colnames(melt_brain) <- c("patientID", "variable", "value") # change these to resemble the correct order of your data e.g. if column 1 has measurement values, column 2 IDs anf column 3 group names then this would be c("value", "patientID", "variable")
+```
+
+# Transform data
+```{r}
+df_ordered_brain <- melt_brain %>%
+mutate(variable = factor(variable, ordered = TRUE))
+glimpse(df_ordered_brain)
+```
+
+# Calculate mean and sd
+```{r}
+df_ordered_brain %>%
+	group_by(variable) %>%
+	summarise(
+		count_poison = n(),
+		mean_value = mean(value, na.rm = TRUE),
+		sd_value = sd(value, na.rm = TRUE)
+	)
+
+```
+
+```{r}
+ggplot(df_ordered_brain, aes(x = variable, y = value, fill = variable)) +
+    geom_boxplot() +
+    geom_jitter(shape = 15,
+        color = "steelblue",
+        position = position_jitter(0.21)) +
+    theme_classic()
+```
+
+# Without jitter
+```{r}
+ggplot(df_ordered_brain, aes(x = variable, y = value, fill = variable)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+```{r}
+anova_one_way <- aov(value~variable, data = df_ordered_brain)
+summary(anova_one_way)
+```
+
+```{r}
+TukeyHSD(anova_one_way)
+```
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
